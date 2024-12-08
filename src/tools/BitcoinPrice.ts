@@ -1,8 +1,8 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { BITCOIN_PRICE_URL } from "../constants.js";
-import { BaseTool } from "./BaseTool.js";
+import { BaseToolImplementation } from "./BaseTool.js";
 
-class BitcoinPriceTool implements BaseTool {
+class BitcoinPriceTool extends BaseToolImplementation {
   name = "bitcoin_price";
   toolDefinition: Tool = {
     name: this.name,

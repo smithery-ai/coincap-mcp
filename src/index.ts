@@ -7,13 +7,11 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { CONSTANTS } from "./constants.js";
-import GetCryptoPriceTool from "./tools/GetCryptoPrice.js";
-import ListAssetsTool from "./tools/ListAssets.js";
+import { loadTools, createToolsMap } from "./utils/toolLoader.js";
 
 const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
-const cryptoPrice = new GetCryptoPriceTool();
-const listAssets = new ListAssetsTool();
+let toolsMap: Map<string, any>;
 
 /**
  * Create an MCP server with tool capabilities
@@ -35,7 +33,7 @@ const server = new Server(
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [cryptoPrice.toolDefinition, listAssets.toolDefinition],
+    tools: Array.from(toolsMap.values()).map((tool) => tool.toolDefinition),
   };
 });
 
@@ -43,15 +41,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  * Handler for tool calls.
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  switch (request.params.name) {
-    case cryptoPrice.name:
-      return cryptoPrice.toolCall(request);
-    case listAssets.name:
-      return listAssets.toolCall();
-
-    default:
-      throw new Error("Unknown tool");
+  const tool = toolsMap.get(request.params.name);
+  if (!tool) {
+    throw new Error("Unknown tool");
   }
+  return tool.toolCall(request);
 });
 
 /**
@@ -59,6 +53,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  * This allows the server to communicate via standard input/output streams.
  */
 async function main() {
+  const tools = await loadTools();
+  toolsMap = createToolsMap(tools);
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

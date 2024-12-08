@@ -2,9 +2,9 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { CONSTANTS } from "../constants.js";
 import { z } from "zod";
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { BaseTool } from "./BaseTool.js";
+import { BaseToolImplementation } from "./BaseTool.js";
 
-class GetCryptoPrice implements BaseTool {
+class GetCryptoPrice extends BaseToolImplementation {
   name = "get_crypto_price";
   toolDefinition: Tool = {
     name: this.name,
@@ -20,7 +20,7 @@ class GetCryptoPrice implements BaseTool {
     },
   };
 
-  toolCall = async (request: z.infer<typeof CallToolRequestSchema>) => {
+  async toolCall(request: z.infer<typeof CallToolRequestSchema>) {
     try {
       const cryptoName = request.params.arguments?.name;
       if (!cryptoName) {
@@ -45,7 +45,7 @@ class GetCryptoPrice implements BaseTool {
         ],
       };
     }
-  };
+  }
 }
 
 export default GetCryptoPrice;

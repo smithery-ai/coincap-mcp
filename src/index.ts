@@ -6,40 +6,19 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import BitcoinPriceTool from "./tools/BitcoinPriceTool.js";
+import { CONSTANTS } from "./constants.js";
 
-interface PropertyMeta {
-  type: string;
-  description: string;
-}
-
-interface InputSchema {
-  type: string;
-  properties?: {
-    ["key"]: PropertyMeta;
-  };
-  required?: string[];
-}
-interface Tool {
-  name: string;
-  description: string;
-  inputSchema: InputSchema;
-}
-
-const bitcoinPriceTool: Tool = {
-  name: "bitcoin_price",
-  description: "Get realtime crypto price",
-  inputSchema: {
-    type: "object",
-  },
-};
+const bitcoinPrice = new BitcoinPriceTool();
+const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
 /**
- * Create an MCP server with capabilities for tools
+ * Create an MCP server with tool capabilities
  */
 const server = new Server(
   {
-    name: "coincap-mcp",
-    version: "0.1.0",
+    name: PROJECT_NAME,
+    version: PROJECT_VERSION,
   },
   {
     capabilities: {
@@ -53,7 +32,7 @@ const server = new Server(
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [bitcoinPriceTool],
+    tools: [bitcoinPrice.toolDefinition],
   };
 });
 
@@ -62,28 +41,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
-    // Turn this into a BitcoinPriceTool.call() or execute()
-    case "bitcoin_price": {
-      const bitcoinPriceUrl = "https://api.coincap.io/v2/assets/bitcoin";
-      try {
-        const response = await fetch(bitcoinPriceUrl);
-        if (!response.ok) {
-          throw new Error("Error fetching coincap data");
-        }
-
-        const body = await response.json();
-
-        return {
-          content: [{ type: "text", text: `${JSON.stringify(body)}` }],
-        };
-      } catch (error) {
-        return {
-          content: [
-            { type: "error", text: JSON.stringify((error as any).message) },
-          ],
-        };
-      }
-    }
+    case "bitcoin_price":
+      return bitcoinPrice.toolCall();
 
     default:
       throw new Error("Unknown tool");

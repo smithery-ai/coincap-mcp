@@ -2,8 +2,9 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { CONSTANTS } from "../constants.js";
 import { z } from "zod";
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { BaseTool } from "./BaseTool.js";
 
-class GetCryptoPrice {
+class GetCryptoPrice implements BaseTool {
   name = "get_crypto_price";
   toolDefinition: Tool = {
     name: this.name,

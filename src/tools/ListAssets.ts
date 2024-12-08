@@ -1,7 +1,8 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { CONSTANTS } from "../constants.js";
+import { BaseTool } from "./BaseTool.js";
 
-class ListAssetsTool {
+class ListAssetsTool implements BaseTool {
   name = "list_assets";
   toolDefinition: Tool = {
     name: this.name,

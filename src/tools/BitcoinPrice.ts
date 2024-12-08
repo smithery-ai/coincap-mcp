@@ -1,9 +1,11 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { BITCOIN_PRICE_URL } from "../constants.js";
+import { BaseTool } from "./BaseTool.js";
 
-class BitcoinPriceTool {
+class BitcoinPriceTool implements BaseTool {
+  name = "bitcoin_price";
   toolDefinition: Tool = {
-    name: "bitcoin_price",
+    name: this.name,
     description: "Get realtime bitcoin price",
     inputSchema: {
       type: "object",

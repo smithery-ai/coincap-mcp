@@ -2,7 +2,7 @@
 
 ## What does this server do?
 
-Allows you to query crypto information from coincap
+Allows you to query crypto information from coincap's public API - no API keys or registration required
 
 ## 🚀 Quick Start
 

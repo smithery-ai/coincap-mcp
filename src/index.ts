@@ -13,6 +13,9 @@ const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
 let toolsMap: Map<string, any>;
 
+/**
+ * Create an MCP server with tool capabilities
+ */
 const server = new Server(
   {
     name: PROJECT_NAME,
@@ -20,54 +23,41 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {
-        enabled: true,
-      },
+      tools: {},
     },
   }
 );
 
+/**
+ * Handler that lists available tools.
+ */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  const tools = Array.from(toolsMap.values()).map(
-    (tool) => tool.toolDefinition
-  );
   return {
-    tools,
+    tools: Array.from(toolsMap.values()).map((tool) => tool.toolDefinition),
   };
 });
 
+/**
+ * Handler for tool calls.
+ */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const tool = toolsMap.get(request.params.name);
   if (!tool) {
-    throw new Error(
-      `Unknown tool: ${request.params.name}. Available tools: ${Array.from(
-        toolsMap.keys()
-      ).join(", ")}`
-    );
+    throw new Error("Unknown tool");
   }
   return tool.toolCall(request);
 });
 
+/**
+ * Start the server using stdio transport.
+ * This allows the server to communicate via standard input/output streams.
+ */
 async function main() {
-  try {
-    const tools = await loadTools();
-    toolsMap = createToolsMap(tools);
+  const tools = await loadTools();
+  toolsMap = createToolsMap(tools);
 
-    if (tools.length === 0) {
-      console.error("No tools were loaded!");
-    } else {
-      console.log(
-        `Loaded ${tools.length} tools:`,
-        tools.map((t) => t.name).join(", ")
-      );
-    }
-
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-  } catch (error) {
-    console.error("Error during initialization:", error);
-    process.exit(1);
-  }
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 }
 
 main().catch((error) => {

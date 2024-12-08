@@ -3,17 +3,17 @@ import { CONSTANTS } from "../constants.js";
 import { z } from "zod";
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-class CryptoPriceTool {
-  name = "crypto_price";
+class GetCryptoPrice {
+  name = "get_crypto_price";
   toolDefinition: Tool = {
     name: this.name,
-    description: "Get realtime crypto price on crypto that isn't Bitcoin",
+    description: "Get realtime crypto price on crypto",
     inputSchema: {
       type: "object",
       properties: {
         name: {
           type: "string",
-          description: "Name of the crypto coin that isn't Bitcoin",
+          description: "Name of the crypto coin",
         },
       },
     },
@@ -22,7 +22,11 @@ class CryptoPriceTool {
   toolCall = async (request: z.infer<typeof CallToolRequestSchema>) => {
     try {
       const cryptoName = request.params.arguments?.name;
+      if (!cryptoName) {
+        throw new Error("Missing crypto name");
+      }
       const url = CONSTANTS.CRYPTO_PRICE_URL + cryptoName;
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Error fetching coincap data");
@@ -31,7 +35,7 @@ class CryptoPriceTool {
       const body = await response.json();
 
       return {
-        content: [{ type: "text", text: `${JSON.stringify(body.data)}` }],
+        content: [{ type: "text", text: JSON.stringify(body.data) }],
       };
     } catch (error) {
       return {
@@ -43,4 +47,4 @@ class CryptoPriceTool {
   };
 }
 
-export default CryptoPriceTool;
+export default GetCryptoPrice;

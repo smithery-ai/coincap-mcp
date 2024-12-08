@@ -7,11 +7,13 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { CONSTANTS } from "./constants.js";
-import CryptoPriceTool from "./tools/CryptoPriceTool.js";
+import GetCryptoPriceTool from "./tools/GetCryptoPrice.js";
+import ListAssetsTool from "./tools/ListAssets.js";
 
-// const bitcoinPrice = new BitcoinPriceTool();
-const cryptoPrice = new CryptoPriceTool();
 const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
+
+const cryptoPrice = new GetCryptoPriceTool();
+const listAssets = new ListAssetsTool();
 
 /**
  * Create an MCP server with tool capabilities
@@ -33,7 +35,7 @@ const server = new Server(
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [cryptoPrice.toolDefinition],
+    tools: [cryptoPrice.toolDefinition, listAssets.toolDefinition],
   };
 });
 
@@ -44,6 +46,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case cryptoPrice.name:
       return cryptoPrice.toolCall(request);
+    case listAssets.name:
+      return listAssets.toolCall();
 
     default:
       throw new Error("Unknown tool");

@@ -5,8 +5,7 @@ import { promises as fs } from "fs";
 
 const findRootDir = () => {
   const currentFilePath = fileURLToPath(import.meta.url);
-  const currentDir = dirname(currentFilePath);
-  return join(currentDir, "..", "..");
+  return dirname(dirname(dirname(currentFilePath)));
 };
 
 const isToolFile = (file: string): boolean => {
@@ -14,7 +13,9 @@ const isToolFile = (file: string): boolean => {
     file.endsWith(".js") &&
     file !== "BaseTool.js" &&
     !file.endsWith(".test.js") &&
-    !file.endsWith(".spec.js")
+    !file.endsWith(".spec.js") &&
+    !file.endsWith(".d.js") &&
+    !file.includes("index")
   );
 };
 
@@ -28,32 +29,32 @@ const validateTool = (tool: any): tool is BaseTool => {
 };
 
 export async function loadTools(): Promise<BaseTool[]> {
-  const rootDir = findRootDir();
-  const toolsPath = join(rootDir, "build", "tools");
-
   try {
-    const files = await fs.readdir(toolsPath);
+    const rootDir = findRootDir();
+    const toolsPath = join(rootDir, "build", "tools");
 
-    const toolPromises = files.filter(isToolFile).map(async (file) => {
+    const files = await fs.readdir(toolsPath);
+    const tools: BaseTool[] = [];
+
+    for (const file of files.filter(isToolFile)) {
       try {
         const modulePath = `file://${join(toolsPath, file)}`;
         const { default: ToolClass } = await import(modulePath);
 
-        if (!ToolClass) return null;
-
-        const tool = new ToolClass();
-        return validateTool(tool) ? tool : null;
-      } catch {
-        return null;
+        if (ToolClass) {
+          const tool = new ToolClass();
+          if (validateTool(tool)) {
+            tools.push(tool);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to load tool from ${file}:`, error);
       }
-    });
+    }
 
-    const tools = (await Promise.all(toolPromises)).filter(
-      Boolean
-    ) as BaseTool[];
     return tools;
   } catch (error) {
-    console.error(`Failed to load tools from ${toolsPath}`);
+    console.error(`Failed to load tools:`, error);
     return [];
   }
 }

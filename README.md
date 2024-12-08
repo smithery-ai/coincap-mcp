@@ -4,6 +4,37 @@
 
 Allows you to query crypto information from coincap
 
+## 🚀 Quick Start
+
+To get started, find your mongodb connection url and add this configuration to your Claude Desktop config file:
+
+**MacOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": ["coincap-mcp"]
+    }
+  }
+}
+```
+
+### Prerequisites
+
+- Node.js 18+
+- npx
+
+Then, launch Claude Desktop and you're ready to go!
+
+## Sample Prompts
+
+- What is the price of bitcoin?
+- What are the available crypto assets?
+- What is the market cap of ethereum?
+
 ## Tools
 
 #### Bitcoin Price Tool
@@ -18,9 +49,9 @@ Gets price for any cryptocurrency available on coincap API. It's a good example 
 
 Gets a list of all crypto assets available in coincap API
 
-## How to use
+## Development - local build
 
-You can build it locally for now, I will publish this to npx eventually...
+To build it locally:
 
 On MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
@@ -54,3 +85,7 @@ For development with auto-rebuild:
 ```bash
 npm run watch
 ```
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

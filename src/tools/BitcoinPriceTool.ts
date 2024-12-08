@@ -20,7 +20,7 @@ class BitcoinPriceTool {
       const body = await response.json();
 
       return {
-        content: [{ type: "text", text: `${JSON.stringify(body)}` }],
+        content: [{ type: "text", text: `${JSON.stringify(body.data)}` }],
       };
     } catch (error) {
       return {

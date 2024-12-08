@@ -6,10 +6,11 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import BitcoinPriceTool from "./tools/BitcoinPriceTool.js";
 import { CONSTANTS } from "./constants.js";
+import CryptoPriceTool from "./tools/CryptoPriceTool.js";
 
-const bitcoinPrice = new BitcoinPriceTool();
+// const bitcoinPrice = new BitcoinPriceTool();
+const cryptoPrice = new CryptoPriceTool();
 const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
 /**
@@ -32,7 +33,7 @@ const server = new Server(
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [bitcoinPrice.toolDefinition],
+    tools: [cryptoPrice.toolDefinition],
   };
 });
 
@@ -41,8 +42,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
-    case "bitcoin_price":
-      return bitcoinPrice.toolCall();
+    case cryptoPrice.name:
+      return cryptoPrice.toolCall(request);
 
     default:
       throw new Error("Unknown tool");

@@ -43,7 +43,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const tool = toolsMap.get(request.params.name);
   if (!tool) {
-    throw new Error("Unknown tool");
+    throw new Error(
+      `Unknown tool: ${request.params.name}. Available tools: ${Array.from(
+        toolsMap.keys()
+      ).join(", ")}`
+    );
   }
   return tool.toolCall(request);
 });
@@ -53,11 +57,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  * This allows the server to communicate via standard input/output streams.
  */
 async function main() {
-  const tools = await loadTools();
-  toolsMap = createToolsMap(tools);
+  try {
+    const tools = await loadTools();
+    toolsMap = createToolsMap(tools);
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  } catch (error) {
+    console.error("Error during initialization:", error);
+    throw error;
+  }
 }
 
 main().catch((error) => {

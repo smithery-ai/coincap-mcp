@@ -3,11 +3,41 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { promises as fs } from "fs";
 
-const findRootDir = () => {
+async function findToolsPath(): Promise<string> {
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = dirname(currentFilePath);
-  return join(currentDir, "..", "..");
-};
+
+  const possiblePaths = [
+    join(currentDir, "..", "tools"),
+    join(currentDir, "..", "..", "build", "tools"),
+    join(dirname(dirname(currentDir)), "tools"),
+    join(dirname(dirname(dirname(currentDir))), "build", "tools"),
+  ];
+
+  console.log("Searching for tools in:");
+  console.log(possiblePaths.join("\n"));
+
+  for (const path of possiblePaths) {
+    try {
+      const stats = await fs.stat(path);
+      if (stats.isDirectory()) {
+        const files = await fs.readdir(path);
+        if (
+          files.some(
+            (file) => file.endsWith(".js") && !file.includes("BaseTool")
+          )
+        ) {
+          console.log(`Found tools directory at: ${path}`);
+          return path;
+        }
+      }
+    } catch (error) {
+      console.log(`Path ${path} not accessible`);
+    }
+  }
+
+  throw new Error("Could not find tools directory");
+}
 
 const isToolFile = (file: string): boolean => {
   return (
@@ -21,11 +51,10 @@ const isToolFile = (file: string): boolean => {
 };
 
 export async function loadTools(): Promise<BaseTool[]> {
-  const rootDir = findRootDir();
-  const toolsPath = join(rootDir, "build", "tools");
-  console.log(`Loading tools from: ${toolsPath}`);
-
   try {
+    const toolsPath = await findToolsPath();
+    console.log(`Loading tools from: ${toolsPath}`);
+
     const files = await fs.readdir(toolsPath);
     console.log(`Found files: ${files.join(", ")}`);
 
@@ -40,6 +69,8 @@ export async function loadTools(): Promise<BaseTool[]> {
       try {
         console.log(`Loading tool from file: ${file}`);
         const modulePath = `file://${join(toolsPath, file)}`;
+        console.log(`Attempting to import from: ${modulePath}`);
+
         const { default: ToolClass } = await import(modulePath);
 
         if (!ToolClass) {
@@ -61,6 +92,10 @@ export async function loadTools(): Promise<BaseTool[]> {
         }
       } catch (error) {
         console.error(`Error loading tool from ${file}:`, error);
+        console.error(
+          "Error details:",
+          error instanceof Error ? error.stack : String(error)
+        );
       }
     }
 
@@ -75,7 +110,7 @@ export async function loadTools(): Promise<BaseTool[]> {
 
     return tools;
   } catch (error) {
-    console.error(`Failed to load tools from ${toolsPath}:`, error);
+    console.error(`Failed to load tools:`, error);
     return [];
   }
 }

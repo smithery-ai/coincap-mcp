@@ -1,6 +1,6 @@
 {
   "name": "coincap-mcp",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "author": {
     "name": "Alex Andru",
     "email": "alex007d@gmail.com"
@@ -9,14 +9,12 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "coincap-mcp": "./build/index.js"
+    "coincap-mcp": "build/index.js"
   },
+  "main": "build/index.js",
   "files": [
     "build",
-    "build/**/*",
-    "!build/**/*.test.js",
-    "!build/**/*.spec.js",
-    "!build/**/*.d.ts"
+    "build/**/*"
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
@@ -50,5 +48,8 @@
   },
   "bugs": {
     "url": "https://github.com/QuantGeekDev/coincap-mcp/issues"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

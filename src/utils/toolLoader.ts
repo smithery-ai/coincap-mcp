@@ -3,30 +3,81 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { promises as fs } from "fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const findRootDir = () => {
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = dirname(currentFilePath);
+  return join(currentDir, "..", "..");
+};
+
+const isToolFile = (file: string): boolean => {
+  return (
+    file.endsWith(".js") &&
+    !file.includes("BaseTool") &&
+    !file.includes("index") &&
+    !file.endsWith(".test.js") &&
+    !file.endsWith(".spec.js") &&
+    !file.endsWith(".d.js")
+  );
+};
 
 export async function loadTools(): Promise<BaseTool[]> {
-  const toolsDir = join(__dirname, "..", "tools");
-  const files = await fs.readdir(toolsDir);
-  const tools: BaseTool[] = [];
+  const rootDir = findRootDir();
+  const toolsPath = join(rootDir, "build", "tools");
+  console.log(`Loading tools from: ${toolsPath}`);
 
-  for (const file of files) {
-    if (file === "BaseTool.ts" || !file.endsWith(".ts")) continue;
+  try {
+    const files = await fs.readdir(toolsPath);
+    console.log(`Found files: ${files.join(", ")}`);
 
-    const modulePath = `../tools/${file.replace(".ts", ".js")}`;
-    const ToolClass = (await import(modulePath)).default;
+    const tools: BaseTool[] = [];
 
-    if (
-      ToolClass?.prototype?.toolCall &&
-      ToolClass?.prototype?.toolDefinition
-    ) {
-      const tool = new ToolClass();
-      tools.push(tool);
+    for (const file of files) {
+      if (!isToolFile(file)) {
+        console.log(`Skipping file: ${file}`);
+        continue;
+      }
+
+      try {
+        console.log(`Loading tool from file: ${file}`);
+        const modulePath = `file://${join(toolsPath, file)}`;
+        const { default: ToolClass } = await import(modulePath);
+
+        if (!ToolClass) {
+          console.log(`No default export in ${file}`);
+          continue;
+        }
+
+        const tool = new ToolClass();
+
+        if (
+          tool.name &&
+          tool.toolDefinition &&
+          typeof tool.toolCall === "function"
+        ) {
+          console.log(`Successfully loaded tool: ${tool.name}`);
+          tools.push(tool);
+        } else {
+          console.log(`Invalid tool in ${file}: missing required properties`);
+        }
+      } catch (error) {
+        console.error(`Error loading tool from ${file}:`, error);
+      }
     }
-  }
 
-  return tools;
+    if (tools.length === 0) {
+      console.warn("No tools were loaded!");
+    } else {
+      console.log(
+        `Successfully loaded ${tools.length} tools:`,
+        tools.map((t) => t.name).join(", ")
+      );
+    }
+
+    return tools;
+  } catch (error) {
+    console.error(`Failed to load tools from ${toolsPath}:`, error);
+    return [];
+  }
 }
 
 export function createToolsMap(tools: BaseTool[]): Map<string, BaseTool> {

@@ -13,9 +13,6 @@ const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
 let toolsMap: Map<string, any>;
 
-/**
- * Create an MCP server with tool capabilities
- */
 const server = new Server(
   {
     name: PROJECT_NAME,
@@ -23,42 +20,67 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {},
+      tools: {
+        enabled: true,
+      },
     },
   }
 );
 
-/**
- * Handler that lists available tools.
- */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  if (!toolsMap || toolsMap.size === 0) {
+    console.warn("No tools available for listing");
+    return { tools: [] };
+  }
   return {
     tools: Array.from(toolsMap.values()).map((tool) => tool.toolDefinition),
   };
 });
 
-/**
- * Handler for tool calls.
- */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (!toolsMap) {
+    throw new Error("Tools not initialized");
+  }
+
   const tool = toolsMap.get(request.params.name);
   if (!tool) {
-    throw new Error("Unknown tool");
+    throw new Error(
+      `Unknown tool: ${request.params.name}. Available tools: ${Array.from(
+        toolsMap.keys()
+      ).join(", ")}`
+    );
   }
   return tool.toolCall(request);
 });
 
-/**
- * Start the server using stdio transport.
- * This allows the server to communicate via standard input/output streams.
- */
 async function main() {
-  const tools = await loadTools();
-  toolsMap = createToolsMap(tools);
+  try {
+    console.log("Starting Coincap MCP Server...");
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+    const tools = await loadTools();
+    if (tools.length === 0) {
+      console.error("No tools were loaded! Server may not function correctly.");
+    }
+
+    toolsMap = createToolsMap(tools);
+    console.log(
+      `Initialized with ${tools.length} tools:`,
+      Array.from(toolsMap.keys()).join(", ")
+    );
+
+    const transport = new StdioServerTransport();
+    console.log("Connecting to transport...");
+    await server.connect(transport);
+    console.log("Server started successfully!");
+  } catch (error) {
+    console.error("Fatal error during server initialization:", error);
+    process.exit(1);
+  }
 }
+
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled promise rejection:", error);
+});
 
 main().catch((error) => {
   console.error("Server error:", error);

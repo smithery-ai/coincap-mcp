@@ -12,10 +12,8 @@ async function findToolsPath(): Promise<string> {
     join(currentDir, "..", "..", "build", "tools"),
     join(dirname(dirname(currentDir)), "tools"),
     join(dirname(dirname(dirname(currentDir))), "build", "tools"),
+    join(process.cwd(), "build", "tools"),
   ];
-
-  console.log("Searching for tools in:");
-  console.log(possiblePaths.join("\n"));
 
   for (const path of possiblePaths) {
     try {
@@ -27,12 +25,11 @@ async function findToolsPath(): Promise<string> {
             (file) => file.endsWith(".js") && !file.includes("BaseTool")
           )
         ) {
-          console.log(`Found tools directory at: ${path}`);
           return path;
         }
       }
-    } catch (error) {
-      console.log(`Path ${path} not accessible`);
+    } catch {
+      continue;
     }
   }
 
@@ -53,28 +50,19 @@ const isToolFile = (file: string): boolean => {
 export async function loadTools(): Promise<BaseTool[]> {
   try {
     const toolsPath = await findToolsPath();
-    console.log(`Loading tools from: ${toolsPath}`);
-
     const files = await fs.readdir(toolsPath);
-    console.log(`Found files: ${files.join(", ")}`);
-
     const tools: BaseTool[] = [];
 
     for (const file of files) {
       if (!isToolFile(file)) {
-        console.log(`Skipping file: ${file}`);
         continue;
       }
 
       try {
-        console.log(`Loading tool from file: ${file}`);
         const modulePath = `file://${join(toolsPath, file)}`;
-        console.log(`Attempting to import from: ${modulePath}`);
-
         const { default: ToolClass } = await import(modulePath);
 
         if (!ToolClass) {
-          console.log(`No default export in ${file}`);
           continue;
         }
 
@@ -85,27 +73,11 @@ export async function loadTools(): Promise<BaseTool[]> {
           tool.toolDefinition &&
           typeof tool.toolCall === "function"
         ) {
-          console.log(`Successfully loaded tool: ${tool.name}`);
           tools.push(tool);
-        } else {
-          console.log(`Invalid tool in ${file}: missing required properties`);
         }
       } catch (error) {
         console.error(`Error loading tool from ${file}:`, error);
-        console.error(
-          "Error details:",
-          error instanceof Error ? error.stack : String(error)
-        );
       }
-    }
-
-    if (tools.length === 0) {
-      console.warn("No tools were loaded!");
-    } else {
-      console.log(
-        `Successfully loaded ${tools.length} tools:`,
-        tools.map((t) => t.name).join(", ")
-      );
     }
 
     return tools;

@@ -6,7 +6,7 @@ Allows you to query crypto information from coincap's public API - no API keys o
 
 ## 🚀 Quick Start
 
-To get started, find your mongodb connection url and add this configuration to your Claude Desktop config file:
+To get started, add this configuration to your Claude Desktop config file:
 
 **MacOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`  
 **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
